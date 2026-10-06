@@ -2,10 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async create(userId: number, dto: CreatePostDto) {
     return this.prisma.post.create({
@@ -18,6 +21,14 @@ export class PostsService {
     });
   }
   async findAll(page: number, limit: number) {
+    const cacheKey = `posts:page:${page}:limit:${limit}`;
+
+    const cachedPosts = await this.redisService.get(cacheKey);
+
+    if (cachedPosts) {
+      return cachedPosts;
+    }
+
     const skip = (page - 1) * limit;
 
     const [posts, totalItems] = await Promise.all([
@@ -67,28 +78,35 @@ export class PostsService {
       this.prisma.post.count(),
     ]);
 
-  const items = posts.map((post) => ({
-      id: post.id,
-      content: post.content,
-      contentType: post.contentType,
-      caption: post.caption,
-      createdAt: post.createdAt,
+    const result = {
+      items: posts.map((post) => ({
+        id: post.id,
+        content: post.content,
+        contentType: post.contentType,
+        caption: post.caption,
+        createdAt: post.createdAt,
 
-      author: post.author,
+        author: post.author,
 
-      totalComments: post._count.comments,
+        totalComments: post._count.comments,
 
-      latestComment: post.comments[0] ?? null,
-    }));
+        latestComment: post.comments[0] ?? null,
+      })),
 
-    return {
-      items,
       pagination: {
         currentPage: page,
         itemsPerPage: limit,
         totalItems,
       },
     };
+
+    await this.redisService.set(
+      cacheKey,
+      result,
+      60,
+    );
+
+    return result;
   }
   async findOne(
     postId: number,
