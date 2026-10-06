@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreatePostDto {
   @ApiProperty({
@@ -8,6 +8,7 @@ export class CreatePostDto {
   })
   @IsString()
   @MinLength(1)
+  @MaxLength(200,{message: 'Post content must be between 1 and 200 characters long'})
   content: string;
 
   @ApiProperty({
@@ -24,5 +25,6 @@ export class CreatePostDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(200, {message: 'Post caption must be between 1 and 200 characters long'})
   caption?: string;
 }
