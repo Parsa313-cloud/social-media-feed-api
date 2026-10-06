@@ -11,7 +11,7 @@ export class PostsService {
   ) {}
 
   async create(userId: number, dto: CreatePostDto) {
-    return this.prisma.post.create({
+    const post = await this.prisma.post.create({
       data: {
         authorId: userId,
         content: dto.content,
@@ -19,6 +19,10 @@ export class PostsService {
         caption: dto.caption,
       },
     });
+
+    await this.redisService.deleteByPattern('posts:*');
+
+    return post;
   }
   async findAll(page: number, limit: number) {
     const cacheKey = `posts:page:${page}:limit:${limit}`;
