@@ -1,5 +1,7 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import {
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 
@@ -15,6 +17,13 @@ describe('Authentication (e2e)', () => {
       }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
 
     await app.init();
   });
@@ -89,7 +98,13 @@ describe('Posts (e2e)', () => {
       }).compile();
 
     app = moduleFixture.createNestApplication();
-
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     await app.init();
   });
 
@@ -162,7 +177,13 @@ describe('Comments (e2e)', () => {
       }).compile();
 
     app = moduleFixture.createNestApplication();
-
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     await app.init();
   });
 
@@ -297,6 +318,154 @@ describe('Comments (e2e)', () => {
         'parentCommentId',
         commentId,
       );
+    });
+  });
+});
+describe('Feed (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule =
+      await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('GET /posts', () => {
+    it('should return paginated posts with comments metadata', async () => {
+      const username = `feeduser_${Date.now()}`;
+      const email = `${username}@example.com`;
+      const password = 'TestPassword123';
+
+      // Register
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          username,
+          email,
+          password,
+        })
+        .expect(201);
+
+      // Login
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username,
+          password,
+        })
+        .expect(200);
+
+      const accessToken = loginResponse.body.accessToken;
+
+      // Create first post
+      const firstPostResponse = await request(app.getHttpServer())
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'First feed post',
+          contentType: 'text',
+          caption: 'First',
+        })
+        .expect(201);
+
+      const firstPostId = firstPostResponse.body.id;
+
+      // Create top-level comment
+      const commentResponse = await request(app.getHttpServer())
+        .post(`/posts/${firstPostId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'First comment',
+        })
+        .expect(201);
+
+      const commentId = commentResponse.body.id;
+
+      // Create reply
+      await request(app.getHttpServer())
+        .post(`/posts/${firstPostId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'Reply to first comment',
+          parentCommentId: commentId,
+        })
+        .expect(201);
+
+      // Create second post
+      const secondPostResponse = await request(app.getHttpServer())
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'Second feed post',
+          contentType: 'text',
+          caption: 'Second',
+        })
+        .expect(201);
+
+      const secondPostId = secondPostResponse.body.id;
+
+      // Get feed
+      const response = await request(app.getHttpServer())
+        .get('/posts')
+        .query({
+          page: 1,
+          limit: 10,
+        })
+        .expect(200);
+
+      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('pagination');
+
+      expect(response.body.pagination).toEqual({
+        currentPage: 1,
+        itemsPerPage: 10,
+        totalItems: expect.any(Number),
+      });
+
+      expect(response.body.items.length).toBeGreaterThanOrEqual(2);
+
+      // Newest post should come first
+      expect(response.body.items[0].id).toBe(secondPostId);
+
+      const firstPost = response.body.items.find(
+        (post: any) => post.id === firstPostId,
+      );
+
+      expect(firstPost).toBeDefined();
+
+      // Comment count must include replies
+      expect(firstPost.totalComments).toBe(2);
+
+      // Author information
+      expect(firstPost.author).toEqual({
+        id: expect.any(Number),
+        username,
+      });
+
+      // Latest comment
+      expect(firstPost.latestComment).not.toBeNull();
+      expect(firstPost.latestComment.text).toBe(
+        'Reply to first comment',
+      );
+      expect(firstPost.latestComment.author).toEqual({
+        id: expect.any(Number),
+        username,
+      });
     });
   });
 });
