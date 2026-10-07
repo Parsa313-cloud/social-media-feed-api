@@ -944,3 +944,112 @@ describe('Post Rate Limit (e2e)', () => {
     });
   });
 });
+
+describe('Feed Cache Invalidation (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule =
+      await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+    app = moduleFixture.createNestApplication();
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('GET /posts cache invalidation', () => {
+    it('should invalidate the feed cache after creating a post', async () => {
+      const username = `cacheuser_${Date.now()}`;
+      const email = `${username}@example.com`;
+      const password = 'TestPassword123';
+
+      // Register
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          username,
+          email,
+          password,
+        })
+        .expect(201);
+
+      // Login
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username,
+          password,
+        })
+        .expect(200);
+
+      const accessToken = loginResponse.body.accessToken;
+
+      // First feed request creates the cache
+      const firstFeedResponse = await request(
+        app.getHttpServer(),
+      )
+        .get('/posts')
+        .query({
+          page: 1,
+          limit: 10,
+        })
+        .expect(200);
+
+      const initialTotalItems =
+        firstFeedResponse.body.pagination.totalItems;
+
+      // Create a new post
+      const postResponse = await request(
+        app.getHttpServer(),
+      )
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'Cache invalidation test post',
+          contentType: 'text',
+        })
+        .expect(201);
+
+      const newPostId = postResponse.body.id;
+
+      // Feed should be fetched again after cache invalidation
+      const secondFeedResponse = await request(
+        app.getHttpServer(),
+      )
+        .get('/posts')
+        .query({
+          page: 1,
+          limit: 10,
+        })
+        .expect(200);
+
+      expect(
+        secondFeedResponse.body.pagination.totalItems,
+      ).toBe(initialTotalItems + 1);
+
+      expect(secondFeedResponse.body.items[0]).toHaveProperty(
+        'id',
+        newPostId,
+      );
+
+      expect(secondFeedResponse.body.items[0]).toHaveProperty(
+        'content',
+        'Cache invalidation test post',
+      );
+    });
+  });
+});
