@@ -658,3 +658,206 @@ describe('Post Detail (e2e)', () => {
     });
   });
 });
+
+describe('Profile (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule =
+      await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+    app = moduleFixture.createNestApplication();
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('GET /users/:userId/profile', () => {
+    it('should return user statistics and recent mixed actions', async () => {
+      const username = `profileuser_${Date.now()}`;
+      const email = `${username}@example.com`;
+      const password = 'TestPassword123';
+
+      // Register
+      const registerResponse = await request(
+        app.getHttpServer(),
+      )
+        .post('/auth/register')
+        .send({
+          username,
+          email,
+          password,
+        })
+        .expect(201);
+
+      const userId = registerResponse.body.id;
+
+      // Login
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username,
+          password,
+        })
+        .expect(200);
+
+      const accessToken = loginResponse.body.accessToken;
+
+      // Create first post
+      const firstPostResponse = await request(
+        app.getHttpServer(),
+      )
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'Profile post 1',
+          contentType: 'text',
+        })
+        .expect(201);
+
+      const firstPostId = firstPostResponse.body.id;
+
+      // Create comment on first post
+      const firstCommentResponse = await request(
+        app.getHttpServer(),
+      )
+        .post(`/posts/${firstPostId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'Profile comment 1',
+        })
+        .expect(201);
+
+      const firstCommentId = firstCommentResponse.body.id;
+
+      // Create second post
+      const secondPostResponse = await request(
+        app.getHttpServer(),
+      )
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'Profile post 2',
+          contentType: 'text',
+        })
+        .expect(201);
+
+      const secondPostId = secondPostResponse.body.id;
+
+      // Create second comment
+      const secondCommentResponse = await request(
+        app.getHttpServer(),
+      )
+        .post(`/posts/${secondPostId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'Profile comment 2',
+        })
+        .expect(201);
+
+      const secondCommentId = secondCommentResponse.body.id;
+
+      // Get profile
+      const response = await request(app.getHttpServer())
+        .get(`/users/${userId}/profile`)
+        .expect(200);
+
+      // Basic user information
+      expect(response.body).toHaveProperty('id', userId);
+      expect(response.body).toHaveProperty(
+        'username',
+        username,
+      );
+
+      // Statistics
+      expect(response.body.total_posts_created).toBe(2);
+      expect(response.body.total_comments_made).toBe(2);
+
+      // Recent actions
+      expect(response.body).toHaveProperty('recent_actions');
+      expect(response.body.recent_actions).toHaveLength(4);
+
+      const actions = response.body.recent_actions;
+
+      // All actions belong to the same user
+      expect(
+        actions.every((action: any) =>
+          ['post', 'comment'].includes(action.type),
+        ),
+      ).toBe(true);
+
+      // Both action types must exist
+      expect(
+        actions.some((action: any) => action.type === 'post'),
+      ).toBe(true);
+
+      expect(
+        actions.some((action: any) => action.type === 'comment'),
+      ).toBe(true);
+
+      // All created actions should be present
+      expect(
+        actions.some(
+          (action: any) =>
+            action.type === 'post' &&
+            action.id === firstPostId,
+        ),
+      ).toBe(true);
+
+      expect(
+        actions.some(
+          (action: any) =>
+            action.type === 'post' &&
+            action.id === secondPostId,
+        ),
+      ).toBe(true);
+
+      expect(
+        actions.some(
+          (action: any) =>
+            action.type === 'comment' &&
+            action.id === firstCommentId,
+        ),
+      ).toBe(true);
+
+      expect(
+        actions.some(
+          (action: any) =>
+            action.type === 'comment' &&
+            action.id === secondCommentId,
+        ),
+      ).toBe(true);
+
+      // Actions should be sorted newest first
+      for (let i = 1; i < actions.length; i++) {
+        expect(
+          new Date(actions[i - 1].createdAt).getTime(),
+        ).toBeGreaterThanOrEqual(
+          new Date(actions[i].createdAt).getTime(),
+        );
+      }
+
+      // Maximum of 5 recent actions
+      expect(actions.length).toBeLessThanOrEqual(5);
+    });
+
+    it('should return 404 for a non-existent user', async () => {
+      await request(app.getHttpServer())
+        .get('/users/999999/profile')
+        .expect(404);
+    });
+  });
+});
