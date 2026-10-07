@@ -469,3 +469,192 @@ describe('Feed (e2e)', () => {
     });
   });
 });
+
+describe('Post Detail (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule =
+      await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+    app = moduleFixture.createNestApplication();
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('GET /posts/:postId', () => {
+    it('should return post details with paginated top-level comments', async () => {
+      const username = `detailuser_${Date.now()}`;
+      const email = `${username}@example.com`;
+      const password = 'TestPassword123';
+
+      // Register
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          username,
+          email,
+          password,
+        })
+        .expect(201);
+
+      // Login
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username,
+          password,
+        })
+        .expect(200);
+
+      const accessToken = loginResponse.body.accessToken;
+
+      // Create post
+      const postResponse = await request(app.getHttpServer())
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'Post detail test',
+          contentType: 'text',
+          caption: 'Detail',
+        })
+        .expect(201);
+
+      const postId = postResponse.body.id;
+
+      // Create first top-level comment
+      const firstCommentResponse = await request(
+        app.getHttpServer(),
+      )
+        .post(`/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'First comment',
+        })
+        .expect(201);
+
+      const firstCommentId = firstCommentResponse.body.id;
+
+      // Create two replies to first comment
+      await request(app.getHttpServer())
+        .post(`/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'First reply',
+          parentCommentId: firstCommentId,
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'Second reply',
+          parentCommentId: firstCommentId,
+        })
+        .expect(201);
+
+      // Create second top-level comment
+      const secondCommentResponse = await request(
+        app.getHttpServer(),
+      )
+        .post(`/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          text: 'Second comment',
+        })
+        .expect(201);
+
+      const secondCommentId = secondCommentResponse.body.id;
+
+      // Get post detail
+      const response = await request(app.getHttpServer())
+        .get(`/posts/${postId}`)
+        .query({
+          page: 1,
+          limit: 10,
+        })
+        .expect(200);
+
+      // Post information
+      expect(response.body).toHaveProperty('id', postId);
+      expect(response.body).toHaveProperty('content', 'Post detail test');
+
+      // Author information
+      expect(response.body.author).toEqual({
+        id: expect.any(Number),
+        username,
+      });
+
+      // Pagination
+      expect(response.body.pagination).toEqual({
+        currentPage: 1,
+        itemsPerPage: 10,
+        totalItems: 2,
+      });
+
+      // Only top-level comments should be returned
+      expect(response.body.comments).toHaveLength(2);
+
+      const firstComment = response.body.comments.find(
+        (comment: any) => comment.id === firstCommentId,
+      );
+
+      const secondComment = response.body.comments.find(
+        (comment: any) => comment.id === secondCommentId,
+      );
+
+      expect(firstComment).toBeDefined();
+      expect(secondComment).toBeDefined();
+
+      // First comment has two replies
+      expect(firstComment.totalReplies).toBe(2);
+
+      // Second comment has no replies
+      expect(secondComment.totalReplies).toBe(0);
+
+      // Comment author
+      expect(firstComment.author).toEqual({
+        id: expect.any(Number),
+        username,
+      });
+
+      // Replies must not appear as top-level comments
+      expect(
+        response.body.comments.some(
+          (comment: any) => comment.text === 'First reply',
+        ),
+      ).toBe(false);
+
+      expect(
+        response.body.comments.some(
+          (comment: any) => comment.text === 'Second reply',
+        ),
+      ).toBe(false);
+    });
+
+    it('should return 404 for a non-existent post', async () => {
+      await request(app.getHttpServer())
+        .get('/posts/999999')
+        .query({
+          page: 1,
+          limit: 10,
+        })
+        .expect(404);
+    });
+  });
+});
