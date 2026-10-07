@@ -861,3 +861,86 @@ describe('Profile (e2e)', () => {
     });
   });
 });
+
+describe('Post Rate Limit (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule =
+      await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+    app = moduleFixture.createNestApplication();
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('POST /posts rate limit', () => {
+    it('should return 429 after exceeding the post creation limit', async () => {
+      const username = `ratelimituser_${Date.now()}`;
+      const email = `${username}@example.com`;
+      const password = 'TestPassword123';
+
+      // Register
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          username,
+          email,
+          password,
+        })
+        .expect(201);
+
+      // Login
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username,
+          password,
+        })
+        .expect(200);
+
+      const accessToken = loginResponse.body.accessToken;
+
+      // First 5 requests should succeed
+      for (let i = 1; i <= 5; i++) {
+        await request(app.getHttpServer())
+          .post('/posts')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({
+            content: `Rate limit test post ${i}`,
+            contentType: 'text',
+          })
+          .expect(201);
+      }
+
+      // 6th request should be rejected
+      const response = await request(app.getHttpServer())
+        .post('/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          content: 'This post should be rate limited',
+          contentType: 'text',
+        })
+        .expect(429);
+
+      expect(response.body).toHaveProperty('statusCode', 429);
+      expect(response.body.message).toContain(
+        'Post creation rate limit exceeded',
+      );
+    });
+  });
+});
