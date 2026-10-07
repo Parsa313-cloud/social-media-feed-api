@@ -74,4 +74,11 @@ export class RedisService
         }
     } while (cursor !== '0');
     }
+    async increment(key: string): Promise<number> {
+        return this.redis.incr(key);
+        }
+
+    async expire(key: string, ttlInSeconds: number): Promise<void> {
+        await this.redis.expire(key, ttlInSeconds);
+    }
 }
