@@ -1,118 +1,813 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚀 Social Media Feed API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A backend-focused **Social Media Feed API** built with **NestJS, TypeScript, PostgreSQL, Prisma, Redis, and Docker**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> 🎯 **Main Goal:** Learning by Building — with a strong focus on **NestJS backend architecture, Redis caching, Redis-based rate limiting, and efficient database querying**.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📌 About The Project
 
-## Project setup
+This project was developed as a practical backend engineering exercise to build a production-oriented social media feed backend from scratch.
 
-```bash
-$ npm install
+Rather than focusing only on implementing CRUD operations, the project focuses on understanding and applying real backend concepts such as:
+
+* 🏗️ NestJS modular architecture
+* 🔐 JWT Authentication & Guards
+* 🗄️ PostgreSQL database design
+* 🔄 Prisma ORM
+* ⚡ Redis caching
+* 🚦 Redis-based rate limiting
+* 📊 Pagination
+* 🌳 Nested comments / replies
+* 🚫 Avoiding N+1 query patterns
+* 🐳 Docker & Docker Compose
+* 🧪 End-to-End testing
+* 📚 API documentation with Swagger
+
+The project was intentionally built as a **learning-by-building project**, with particular attention given to understanding how **NestJS and Redis can be used together in a real backend application**.
+
+---
+
+## 🎯 Learning Objectives
+
+The main purpose of this project was to gain practical experience with:
+
+### 🟢 NestJS
+
+* Modules
+* Controllers
+* Services
+* Dependency Injection
+* Guards
+* DTOs
+* Validation Pipes
+* Authentication
+* Swagger/OpenAPI
+* Application architecture
+
+### 🔴 Redis
+
+Redis was one of the main learning areas of this project.
+
+Implemented Redis features include:
+
+* ⚡ Feed caching
+* 🗑️ Cache invalidation
+* ⏱️ TTL-based cache expiration
+* 🚦 Redis-based rate limiting
+* 🔢 Atomic counters with `INCR`
+* 🔍 Redis key scanning with `SCAN`
+
+### 🔵 Database & Prisma
+
+* PostgreSQL relational database design
+* Prisma ORM
+* Database migrations
+* Relations
+* Self-referencing comment relations
+* Aggregations with `_count`
+* Pagination
+* Query optimization
+
+### 🐳 Docker
+
+The entire application can run using Docker Compose:
+
+```text
+┌──────────────────────────────────────┐
+│           Docker Compose             │
+│                                      │
+│  ┌────────────┐   ┌──────────────┐  │
+│  │  NestJS    │──▶│ PostgreSQL   │  │
+│  │    API     │   │      18      │  │
+│  └─────┬──────┘   └──────────────┘  │
+│        │                             │
+│        ▼                             │
+│  ┌────────────┐                      │
+│  │   Redis    │                      │
+│  │     7      │                      │
+│  └────────────┘                      │
+│                                      │
+└──────────────────────────────────────┘
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+# 🛠️ Tech Stack
 
-# watch mode
-$ npm run start:dev
+| Technology    | Purpose               |
+| ------------- | --------------------- |
+| 🟢 NestJS     | Backend framework     |
+| 🔷 TypeScript | Programming language  |
+| 🐘 PostgreSQL | Relational database   |
+| ◇ Prisma      | ORM & migrations      |
+| 🔴 Redis      | Cache & rate limiting |
+| 🔐 JWT        | Authentication        |
+| 🐳 Docker     | Containerization      |
+| 🧪 Jest       | Testing               |
+| 🔬 Supertest  | E2E HTTP testing      |
+| 📖 Swagger    | API documentation     |
 
-# production mode
-$ npm run start:prod
+---
+
+# ✨ Features
+
+## 🔐 Authentication
+
+The API supports:
+
+* User registration
+* User login
+* Password hashing with bcrypt
+* JWT access tokens
+* Protected routes using NestJS Guards
+* Authentication through Bearer tokens
+
+### Endpoints
+
+```http
+POST /auth/register
+POST /auth/login
+GET  /auth/me
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+# 📝 Posts
 
-# e2e tests
-$ npm run test:e2e
+Authenticated users can create posts.
 
-# test coverage
-$ npm run test:cov
+```http
+POST /posts
 ```
 
-## Deployment
+The user ID is extracted from the authenticated JWT rather than being supplied by the client.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Example:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```json
+{
+  "content": "Hello world!",
+  "contentType": "text",
+  "caption": "My first post"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Observability
+# 💬 Comments & Nested Replies
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Posts support comments and nested replies.
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+```http
+POST /posts/:postId/comments
+```
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+A comment can optionally specify:
 
-This project is already instrumented. Create a free account at [observe.nestjs.com](https://observe.nestjs.com), add an application, and paste the generated app key and secret into the `ObserveModule.forRoot()` call in `src/app.module.ts`.
+```json
+{
+  "parentCommentId": 10
+}
+```
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+This creates a reply to another comment.
 
-## Resources
+The database uses a **self-referencing relationship** to support nested comment structures.
 
-Check out a few resources that may come in handy when working with NestJS:
+```text
+Post
+ │
+ ├── Comment
+ │    ├── Reply
+ │    │    └── Reply
+ │    │
+ │    └── Reply
+ │
+ └── Comment
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+# 📰 Feed
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```http
+GET /posts
+```
 
-## Stay in touch
+The feed provides:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+* Newest posts first
+* Post author
+* Total comments
+* Total replies included in comment count
+* Latest comment
+* Pagination metadata
 
-## License
+Example pagination:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```json
+{
+  "pagination": {
+    "currentPage": 1,
+    "itemsPerPage": 10,
+    "totalItems": 25
+  }
+}
+```
+
+---
+
+# ⚡ Redis Feed Caching
+
+One of the main goals of this project was understanding practical Redis caching.
+
+The post feed is cached using a key based on the pagination parameters:
+
+```text
+posts:page:1:limit:10
+```
+
+Cached responses have a TTL of **60 seconds**.
+
+### Cache Flow
+
+```text
+GET /posts
+      │
+      ▼
+   Redis?
+   /    \
+ HIT     MISS
+ │        │
+ ▼        ▼
+Return   PostgreSQL
+cache      │
+           ▼
+         Redis
+           │
+           ▼
+         Return
+```
+
+This reduces unnecessary database queries for frequently requested feed pages.
+
+---
+
+# 🗑️ Cache Invalidation
+
+When a new post is successfully created:
+
+```http
+POST /posts
+```
+
+the cached feed is invalidated.
+
+```text
+Create Post
+     │
+     ▼
+Post saved in PostgreSQL
+     │
+     ▼
+Invalidate posts:* cache
+     │
+     ▼
+Next GET /posts
+     │
+     ▼
+Fresh data from PostgreSQL
+     │
+     ▼
+Store new result in Redis
+```
+
+This ensures that users do not continue receiving stale feed data after a new post is created.
+
+---
+
+# 🚦 Redis Rate Limiting
+
+Another major Redis learning component is a custom rate limiter specifically for:
+
+```http
+POST /posts
+```
+
+The current policy is:
+
+```text
+5 post creations / 60 seconds / user
+```
+
+Redis maintains an atomic counter:
+
+```text
+rate-limit:posts:<userId>
+```
+
+Using Redis `INCR` makes the counter atomic.
+
+When the limit is exceeded:
+
+```http
+HTTP 429 Too Many Requests
+```
+
+is returned.
+
+Example:
+
+```text
+Request 1 → ✅
+Request 2 → ✅
+Request 3 → ✅
+Request 4 → ✅
+Request 5 → ✅
+Request 6 → ❌ 429 Too Many Requests
+```
+
+---
+
+# 🔎 Post Details
+
+```http
+GET /posts/:postId
+```
+
+Returns:
+
+* Post information
+* Author
+* Paginated top-level comments
+* Comment authors
+* Number of replies for each comment
+
+Example:
+
+```json
+{
+  "id": 1,
+  "content": "Hello world!",
+  "author": {
+    "id": 1,
+    "username": "parsa"
+  },
+  "comments": [
+    {
+      "id": 10,
+      "text": "Great post!",
+      "author": {
+        "id": 2,
+        "username": "user2"
+      },
+      "totalReplies": 3
+    }
+  ]
+}
+```
+
+---
+
+# 👤 User Profile
+
+```http
+GET /users/:userId/profile
+```
+
+The profile endpoint provides:
+
+* User information
+* Total posts created
+* Total comments made
+* Five most recent mixed actions
+
+The recent actions combine:
+
+```text
+Posts + Comments
+       ↓
+Sort by createdAt
+       ↓
+Take latest 5
+```
+
+---
+
+# 🧠 Database Design
+
+The main entities are:
+
+```text
+User
+ │
+ ├───────────────┐
+ ▼               ▼
+Post           Comment
+ │               │
+ │               └──────┐
+ │                      │
+ └──────────────────────┘
+```
+
+### User
+
+```text
+User
+ ├── id
+ ├── username
+ ├── email
+ ├── passwordHash
+ ├── createdAt
+ └── updatedAt
+```
+
+### Post
+
+```text
+Post
+ ├── id
+ ├── authorId
+ ├── content
+ ├── contentType
+ ├── caption
+ └── createdAt
+```
+
+### Comment
+
+```text
+Comment
+ ├── id
+ ├── postId
+ ├── authorId
+ ├── parentCommentId
+ ├── text
+ └── createdAt
+```
+
+The `parentCommentId` field enables the self-referencing comment/reply relationship.
+
+---
+
+# 🚫 N+1 Query Consideration
+
+The feed was implemented with Prisma relational queries and aggregation rather than fetching each post's author/comments individually in a loop.
+
+For example, author information and comment counts are retrieved as part of the database query.
+
+This avoids the classic:
+
+```text
+1 query for posts
++
+N queries for authors
++
+N queries for comments
+```
+
+pattern.
+
+Instead, related information is loaded using Prisma's relational querying capabilities.
+
+---
+
+# 📄 Pagination
+
+Pagination is implemented for:
+
+### Feed
+
+```http
+GET /posts?page=1&limit=10
+```
+
+### Post comments
+
+```http
+GET /posts/1?page=1&limit=10
+```
+
+The API returns:
+
+```json
+{
+  "pagination": {
+    "currentPage": 1,
+    "itemsPerPage": 10,
+    "totalItems": 100
+  }
+}
+```
+
+---
+
+# 🧪 Testing
+
+The project includes End-to-End tests using:
+
+* Jest
+* Supertest
+* NestJS Testing utilities
+
+Current E2E coverage includes:
+
+```text
+Authentication
+├── Register
+└── Login
+
+Posts
+├── Authentication
+└── Creation
+
+Comments
+├── Authentication
+├── Top-level comments
+└── Replies
+
+Feed
+└── Pagination + metadata + comments
+
+Post Details
+├── Details
+└── 404 handling
+
+Profile
+├── Statistics
+├── Recent actions
+└── 404 handling
+
+Rate Limiting
+└── 429 after limit
+
+Redis Cache
+└── Cache invalidation after post creation
+```
+
+### Current Result
+
+```text
+14 tests
+14 passed
+0 failed
+```
+
+---
+
+# 🐳 Running With Docker
+
+## 1. Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd social-media-feed-api
+```
+
+## 2. Build the containers
+
+```bash
+docker compose build
+```
+
+## 3. Start the application
+
+```bash
+docker compose up -d
+```
+
+The stack contains:
+
+```text
+NestJS API       → localhost:3000
+PostgreSQL       → localhost:5432
+Redis            → localhost:6379
+```
+
+## 4. Apply Prisma migrations
+
+```bash
+docker compose exec api npx prisma migrate deploy
+```
+
+## 5. Check containers
+
+```bash
+docker compose ps
+```
+
+Expected services:
+
+```text
+social-media-feed-api
+social-media-feed-postgres
+social-media-feed-redis
+```
+
+---
+
+# 📚 API Documentation
+
+Swagger documentation is available at:
+
+```text
+http://localhost:3000/docs
+```
+
+Swagger can be used to explore and test the API endpoints.
+
+---
+
+# 🔧 Environment Variables
+
+For local development, create a `.env` file based on:
+
+```text
+.env.example
+```
+
+Example:
+
+```env
+PORT=3000
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/social_media_feed?schema=public
+
+JWT_SECRET=your-secret-key
+
+REDIS_URL=redis://localhost:6379
+```
+
+> ⚠️ Never commit real secrets or `.env` files to the repository.
+
+---
+
+# 🏗️ Project Structure
+
+```text
+social-media-feed-api/
+│
+├── src/
+│   ├── auth/
+│   │   ├── dto/
+│   │   ├── guards/
+│   │   ├── strategies/
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.module.ts
+│   │
+│   ├── posts/
+│   │   ├── dto/
+│   │   ├── guards/
+│   │   ├── posts.controller.ts
+│   │   ├── posts.service.ts
+│   │   └── posts.module.ts
+│   │
+│   ├── comments/
+│   │   ├── dto/
+│   │   ├── comments.controller.ts
+│   │   ├── comments.service.ts
+│   │   └── comments.module.ts
+│   │
+│   ├── users/
+│   │   ├── users.controller.ts
+│   │   ├── users.service.ts
+│   │   └── users.module.ts
+│   │
+│   ├── prisma/
+│   │   ├── prisma.service.ts
+│   │   └── prisma.module.ts
+│   │
+│   ├── redis/
+│   │   ├── redis.service.ts
+│   │   └── redis.module.ts
+│   │
+│   ├── app.module.ts
+│   └── main.ts
+│
+├── prisma/
+│   ├── migrations/
+│   └── schema.prisma
+│
+├── test/
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+│
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── .env.example
+├── prisma.config.ts
+├── package.json
+└── README.md
+```
+
+---
+
+# 🎓 What I Learned
+
+This project was primarily a **hands-on learning project**.
+
+The biggest focus areas were:
+
+### NestJS
+
+Understanding how to structure a backend application using:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Prisma
+    ↓
+PostgreSQL
+```
+
+and how NestJS Guards, DTOs, validation, modules, and dependency injection fit into this architecture.
+
+### Redis
+
+The most important learning area was Redis.
+
+I implemented Redis in two different backend use cases:
+
+```text
+Redis
+├── ⚡ Feed Cache
+│   ├── GET
+│   ├── SET
+│   ├── TTL
+│   └── Cache Invalidation
+│
+└── 🚦 Rate Limiter
+    ├── INCR
+    ├── EXPIRE
+    └── 429 handling
+```
+
+This helped me understand Redis not only as a simple key-value store, but as a practical backend infrastructure component.
+
+### Docker
+
+I also practiced running the entire backend stack as independent services:
+
+```text
+NestJS
+PostgreSQL
+Redis
+```
+
+and connecting them through Docker Compose service networking.
+
+---
+
+# 🚀 Future Improvements
+
+Possible improvements for a more production-ready version include:
+
+* [ ] Refresh tokens
+* [ ] More advanced Redis caching strategies
+* [ ] Distributed rate limiting improvements
+* [ ] Redis atomic Lua-based rate limiting
+* [ ] Cursor-based pagination
+* [ ] Full-text post search
+* [ ] DataLoader for more complex relational queries
+* [ ] More comprehensive unit tests
+* [ ] Separate test database
+* [ ] CI/CD pipeline
+* [ ] Structured logging
+* [ ] Request tracing
+* [ ] Health check endpoints
+* [ ] Production secret management
+
+---
+
+# 👨‍💻 Author
+
+**Parsa Harooni**
+
+Backend Developer | Django / NestJS
+
+Interested in:
+
+* Backend Development
+* System Design
+* Distributed Systems
+* Redis
+* PostgreSQL
+* Docker
+* DevOps
+* Data Structures & Algorithms
+
+---
+
+## ⭐ Final Note
+
+This project was built with a **learning-first, engineering-oriented approach**.
+
+The goal was not simply to implement endpoints, but to understand the backend concepts behind them — especially **NestJS architecture, PostgreSQL data modeling, Prisma, Redis caching, Redis rate limiting, and containerized development**.
+
+> **Build it. Break it. Understand it. Improve it. 🚀**
